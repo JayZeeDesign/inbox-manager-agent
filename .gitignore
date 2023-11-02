@@ -1,0 +1,7 @@
+
+.env
+__pycache__/custom_tools.cpython-310.pyc
+email_pairs.csv
+faq.csv
+past_email_mbox.csv
+Sent.mbox

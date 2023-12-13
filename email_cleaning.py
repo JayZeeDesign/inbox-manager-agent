@@ -1,64 +1,102 @@
 import os
+import json
+import csv
+import asyncio
+import aiohttp
 from dotenv import find_dotenv, load_dotenv
-import openai
-import json, csv
 
+# Setting the event loop policy for Windows to prevent compatibility issues
+if os.name == 'nt':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+# Load environment variables, including the OpenAI API key
 load_dotenv(find_dotenv())
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+api_key = os.environ.get("OPENAI_API_KEY")
 
-def parse_email(email_thread):
-
+# Function to asynchronously parse an email thread using OpenAI API
+async def parse_email(session, email_thread):
+    # System prompt defining the task for the OpenAI model
     system_prompt = """
-    You are an expert of convert raw email thread into original message / reply pairs. 
-    You are given a raw email thread that Jason reply to others, your goal is to convert it into original message / reply pairs. 
-    - orignal_message: the last message sent to Jason, if it is a long email thread, only take the last message
-    - jason_reply: Jason's reply to the original message
-
-    if there is only one message in the thread, that should be jason_reply
-
-    The exported format should look something like 
-    {
-        "original_message": "xxxx",
-        "jason_reply": "xxxx"
-    }
+    [Your system prompt here]
     """
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
+    # Preparing the request body with the model, messages, and response format
+    json_body = {
+        "model": "gpt-4-1106-preview",
+        "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": email_thread}
-        ]
-    )
+        ],
+        "response_format": {"type": "json_object"}
+    }
 
-    return response["choices"][0]["message"]["content"]
+    # Headers for the API request
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
 
-def process_csv(input_csv_path, output_csv_path):
-    with open(input_csv_path, newline='', encoding='utf-8') as csvfile:
-        csv_reader = csv.DictReader(csvfile)
-        processed_data = []
-        
-        for row in csv_reader:
-            text = row['Body']  # Get the text from the 'body' column
-            json_string = parse_email(text)
-            print(json_string)
-            json_data = json.loads(json_string)  # Convert JSON string to dictionary
-            original_message = json_data.get('original_message', '')
-            jason_reply = json_data.get('jason_reply', '')
-            # Append original row data and new columns to processed_data
-            processed_data.append([original_message, jason_reply])
-    
-    # Write processed data to a new CSV file
-    with open(output_csv_path, mode='w', newline='', encoding='utf-8') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        # Write header
-        csv_writer.writerow(['original_message', 'jason_reply'])
-        # Write data rows
-        csv_writer.writerows(processed_data)
+    # Making an asynchronous POST request to the OpenAI API
+    async with session.post('https://api.openai.com/v1/chat/completions', json=json_body, headers=headers) as response:
+        if response.status == 200:
+            data = await response.json()
+            return data['choices'][0]['message']['content']
+        else:
+            print("Error with OpenAI API:", response.status)
+            response_text = await response.text()
+            print("Response content:", response_text)
+            return None
 
-# Paths to your input and output CSV files
-input_csv_path = 'past_email_final_mboxt.csv'
-output_csv_path = 'email_pairs.csv'
+# Function to process a batch of emails
+async def process_batch(session, email_threads):
+    return await asyncio.gather(*[parse_email(session, email) for email in email_threads])
 
-# Call the function to process the CSV file
-process_csv(input_csv_path, output_csv_path)
+# Main function to process the CSV file and extract email pairs
+async def process_csv(input_csv_path, output_csv_path):
+    async with aiohttp.ClientSession() as session:
+        with open(input_csv_path, newline='', encoding='utf-8') as csvfile:
+            csv_reader = csv.DictReader(csvfile)
+            processed_data = []
+            batch_size = 10  # Batch size for processing emails
+
+            # Reading and processing each email in the CSV file
+            for row in csv_reader:
+                email_batch.append(row['Body'])
+                if len(email_batch) >= batch_size:
+                    results = await process_batch(session, email_batch)
+                    for email_thread, json_string in zip(email_batch, results):
+                        if json_string:
+                            try:
+                                json_data = json.loads(json_string)
+                                original_message = json_data.get('original_message', '')
+                                jason_reply = json_data.get('jason_reply', '')
+                                processed_data.append([original_message, jason_reply])
+                            except json.JSONDecodeError:
+                                print(f"Failed to decode JSON from response: {json_string}")
+                    email_batch = []
+
+            # Processing remaining emails in the final batch
+            if email_batch:
+                results = await process_batch(session, email_batch)
+                for email_thread, json_string in zip(email_batch, results):
+                    if json_string:
+                        try:
+                            json_data = json.loads(json_string)
+                            original_message = json_data.get('original_message', '')
+                            jason_reply = json_data.get('jason_reply', '')
+                            processed_data.append([original_message, jason_reply])
+                        except json.JSONDecodeError:
+                            print(f"Failed to decode JSON from response: {json_string}")
+
+        # Writing the processed data to a new CSV file
+        with open(output_csv_path, mode='w', newline='', encoding='utf-8') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow(['original_message', 'jason_reply'])
+            csv_writer.writerows(processed_data)
+
+# Input and output file paths (adjust as needed)
+input_csv_path = 'input_csv_path'
+output_csv_path = 'output_csv_path'
+
+# Running the main function to process the CSV file
+asyncio.run(process_csv(input_csv_path, output_csv_path))

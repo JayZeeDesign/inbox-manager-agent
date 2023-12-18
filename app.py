@@ -14,8 +14,8 @@ llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
 
 system_message = SystemMessage(
     content="""
-    You are an email inbox assistant of an AI youtube channel called "AI Jason", 
-    who is creating AI educational content, 
+    You are an email inbox assistant of a Realtor named Jacob Ferrari, 
+    who deals with buy, sells, rental, and adminstrative emails, 
     Your goal is to handle all the incoming emails by categorising them based on 
     guideline and decide on next steps
     """
@@ -48,7 +48,41 @@ agent = initialize_agent(
 
 
 test_email = """
-xxxxxxx
+Hi Jacob,
+
+ 
+
+I am glad my documents look great. Further to my e-mail, I will be living on my own and I have no pets. Sorry, I just saw your e-mail this morning. What dates and or times are you free this week for a viewing?
+
+ 
+
+Thank you so much!
+
+ 
+
+Best regards,
+
+ 
+
+John (Jay) Newport
+
+Vice President
+
+LMClark-Logo-Blue-50
+
+L.M. Clark Customs Broker Ltd.
+
+1804 Alstep Drive Suite 200
+
+Mississauga, On
+
+L5S 1W1
+
+Direct line: 289-548-5085
+
+Fax:905-673-7345
+
+www.lmclark.com
 """
 
 agent({"input": test_email})

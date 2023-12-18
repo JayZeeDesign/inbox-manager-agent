@@ -38,6 +38,6 @@ def mbox_to_csv(mbox_file_path, csv_file_path):
             ])
 
 # Usage
-mbox_file_path = 'Sent.mbox'  # replace with the path to your MBOX file
+mbox_file_path = 'C:/Users/happy/Downloads/Sent-001.mbox'  # replace with the path to your MBOX file
 csv_file_path = 'past_email_mbox.csv'  # replace with the desired path for the output CSV file
 mbox_to_csv(mbox_file_path, csv_file_path)

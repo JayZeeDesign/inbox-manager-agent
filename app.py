@@ -63,6 +63,9 @@ def process_email():
         response = agent({"input": email_content})
         return jsonify({"message": "Email processed successfully", "response": response}), 200
     except Exception as e:
+        # Log the error to your server logs
+        app.logger.error(f'Error processing email: {str(e)}')
+        # Return the error message in the response for debugging
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

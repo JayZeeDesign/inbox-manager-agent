@@ -80,16 +80,22 @@ def process_email():
         response = agent({"input": email_content})
         # Serialize the response before returning it
         response_data = serialize(response)
-        # Check if response_data is not a serializable type, raise an error
-        if not isinstance(response_data, (dict, list, str, int, float, bool)):
-            raise TypeError("Response contains non-serializable objects")
+
+         # Log the serialized data for debugging
+        app.logger.info(f'Serialized Response Data: {response_data}')
+
+        # Manual serialization check
+        try:
+            json.dumps(response_data)
+        except TypeError as te:
+            app.logger.error(f'Manual serialization check failed: {str(te)}')
+            raise
+
         return jsonify({"message": "Email processed successfully", "response": response_data}), 200
     except TypeError as te:
-        # Specific error for serialization issues
         app.logger.error(f'Serialization error: {str(te)}')
         return jsonify({"error": str(te)}), 500
     except Exception as e:
-        # Generic error for all other issues
         app.logger.error(f'Error processing email: {str(e)}')
         return jsonify({"error": str(e)}), 500
 

@@ -1,7 +1,7 @@
+import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
-from langchain.agents import initialize_agent
-from langchain.agents import AgentType
+from langchain.agents import initialize_agent, AgentType
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationSummaryBufferMemory
 from langchain.schema import SystemMessage
@@ -21,7 +21,7 @@ system_message = SystemMessage(
     You are an email inbox assistant of a Realtor named Jacob Ferrari, 
     who deals with buy, sells, rental, and administrative emails, 
     Your goal is to handle all the incoming emails by categorizing them based on 
-    guideline and decide on next steps
+    guidelines and decide on next steps.
     """
 )
 
@@ -38,8 +38,10 @@ agent_kwargs = {
     "extra_prompt_messages": [],
     "system_message": system_message,
 }
+
 memory = ConversationSummaryBufferMemory(
-    memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000)
+    memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000
+)
 
 agent = initialize_agent(
     tools,
@@ -49,6 +51,15 @@ agent = initialize_agent(
     agent_kwargs=agent_kwargs,
     memory=memory,
 )
+
+def serialize(obj):
+    """A function to serialize objects to a dictionary."""
+    if hasattr(obj, 'to_dict'):
+        return obj.to_dict()
+    elif hasattr(obj, '__dict__'):
+        return {k: v for k, v in obj.__dict__.items() if not k.startswith('_')}
+    else:
+        return str(obj)
 
 @app.route('/process-email', methods=['POST'])
 def process_email():
@@ -61,12 +72,12 @@ def process_email():
     try:
         # Process the email content with your agent
         response = agent({"input": email_content})
-        return jsonify({"message": "Email processed successfully", "response": response}), 200
+        # Serialize the response before returning it
+        response_data = serialize(response)
+        return jsonify({"message": "Email processed successfully", "response": response_data}), 200
     except Exception as e:
-        # Log the error to your server logs
         app.logger.error(f'Error processing email: {str(e)}')
-        # Return the error message in the response for debugging
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

@@ -72,12 +72,14 @@ def serialize(obj):
 def process_email():
     data = request.get_json()
     email_content = data.get('emailBody')
+    email_message_id = data.get('emailMessageId')  # Extract the email message ID from the request
 
     if not email_content:
         return jsonify({"error": "No email content provided"}), 400
 
     try:
-        response = agent({"input": email_content})
+        # Now you can use both the email_content and email_message_id to process the email
+        response = agent({"input": email_content, "message_id": email_message_id})
         response_data = serialize(response)
         serialized_json = json.dumps(response_data)  # Serialize to JSON string
         return jsonify({"message": "Email processed successfully", "response": json.loads(serialized_json)}), 200

@@ -378,7 +378,7 @@ class EscalateTool(BaseTool):
 
 
 # REPLY EMAIL
-def reply_email(message: str, email_address: str, subject: str):
+def reply_email(message: str, email_address: str, subject: str, message_id: str):
     # URL to send the POST request to
     url = 'https://hook.us1.make.com/kj3b383jpd7z9inhm52bgfnuekjofmc2'
 
@@ -386,7 +386,8 @@ def reply_email(message: str, email_address: str, subject: str):
     data = {
         "Email": email_address,
         "Subject": subject,
-        "Reply": message
+        "Reply": message,
+        "Message-ID": message_id 
     }
 
     # Send the POST request
@@ -406,23 +407,25 @@ class ReplyEmailInput(BaseModel):
         description="The generated response message to be sent to the email address")
     email_address: str = Field(
         description="Destination email address to send email to")
-    subject: str = Field(description="subject of the email")
-
+    subject: str = Field(
+        description="subject of the email")
+    message_id: str = Field(
+        description="Gmail message ID of the email thread") 
 
 class ReplyEmailTool(BaseTool):
     name = "reply_email"
     description = "use this to send emails"
     args_schema: Type[BaseModel] = ReplyEmailInput
 
-    def _run(self, message: str, email_address: str, subject: str):
-        return reply_email(message, email_address, subject)
+    def _run(self, message: str, email_address: str, subject: str, message_id: str):
+        return reply_email(message, email_address, subject, message_id)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")
 
 
 # CREATE EMAIL DRAFT
-def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str):
+def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str, message_id):
     # URL to send the POST request to
     url = 'https://hook.us1.make.com/j588mgvm5b5fogswdiohwsouic6wtu5i'
 
@@ -430,7 +433,8 @@ def create_email_draft(prospect_email_address: str, subject: str, generated_repl
     data = {
         "email": prospect_email_address,
         "subject": subject,
-        "reply": generated_reply
+        "reply": generated_reply,
+        "Message-ID": message_id
     }
 
     # Send the POST request
@@ -447,9 +451,12 @@ class CreateEmailDraftInput(BaseModel):
     """Inputs for scrape_website"""
     prospect_email_address: str = Field(
         description="The prospect's email address")
-    subject: str = Field(description="The original email subject")
+    subject: str = Field(
+        description="The original email subject")
     generated_reply: str = Field(
         description="Generated email reply to prospect")
+    message_id: str = Field(
+        description="Gmail message ID of the email thread")
 
 
 class CreateEmailDraftTool(BaseTool):
@@ -457,8 +464,8 @@ class CreateEmailDraftTool(BaseTool):
     description = "use this to create email draft for jacob to review & send"
     args_schema: Type[BaseModel] = CreateEmailDraftInput
 
-    def _run(self, prospect_email_address: str, subject: str, generated_reply: str):
-        return create_email_draft(prospect_email_address, subject, generated_reply)
+    def _run(self, prospect_email_address: str, subject: str, generated_reply: str, message_id: str):
+        return create_email_draft(prospect_email_address, subject, generated_reply, message_id)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")

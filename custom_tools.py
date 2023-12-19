@@ -336,7 +336,7 @@ class ProspectResearchTool(BaseTool):
 
 def escalate(original_email_address: str, message: str, additional_context: str):
     # URL to send the POST request to
-    url = 'https://hook.us1.make.com/j588mgvm5b5fogswdiohwsouic6wtu5i'
+    url = 'https://hook.us1.make.com/faevm0ijp4yvdmxsnx1yod7q0zqwb8ag'
 
     # Data to send in the POST request
     data = {
@@ -380,7 +380,7 @@ class EscalateTool(BaseTool):
 # REPLY EMAIL
 def reply_email(message: str, email_address: str, subject: str):
     # URL to send the POST request to
-    url = 'https://hook.us1.make.com/j588mgvm5b5fogswdiohwsouic6wtu5i'
+    url = 'https://hook.us1.make.com/kj3b383jpd7z9inhm52bgfnuekjofmc2'
 
     # Data to send in the POST request
     data = {

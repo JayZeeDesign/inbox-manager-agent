@@ -53,13 +53,17 @@ agent = initialize_agent(
 )
 
 def serialize(obj):
-    """A function to serialize objects to a dictionary."""
+    """Recursively serialize objects to a dictionary."""
     if hasattr(obj, 'to_dict'):
         return obj.to_dict()
     elif hasattr(obj, '__dict__'):
-        return {k: v for k, v in obj.__dict__.items() if not k.startswith('_')}
+        # Recursively serialize dictionary attributes
+        return {k: serialize(v) for k, v in obj.__dict__.items() if not k.startswith('_')}
+    elif isinstance(obj, list):
+        # Recursively serialize list elements
+        return [serialize(item) for item in obj]
     else:
-        return str(obj)
+        return obj  # This is a simple data type and is already serializable
 
 @app.route('/process-email', methods=['POST'])
 def process_email():

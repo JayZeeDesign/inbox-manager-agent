@@ -54,18 +54,18 @@ agent = initialize_agent(
 
 def serialize(obj):
     """Recursively serialize objects to a dictionary."""
-    if hasattr(obj, 'to_dict'):
+    if isinstance(obj, (str, int, float, bool)):
+        return obj  # Simple data types
+    elif isinstance(obj, dict):
+        return {k: serialize(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [serialize(item) for item in obj]
+    elif hasattr(obj, 'to_dict'):
         return obj.to_dict()
     elif hasattr(obj, '__dict__'):
-        # Recursively serialize dictionary attributes
         return {k: serialize(v) for k, v in obj.__dict__.items() if not k.startswith('_')}
-    elif isinstance(obj, list):
-        # Recursively serialize list elements
-        return [serialize(item) for item in obj]
-    elif isinstance(obj, (str, int, float, bool)):
-        return obj  # This is a simple data type and is already serializable
     else:
-        raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+        return str(obj)  # Fallback for unhandled types
 
 @app.route('/process-email', methods=['POST'])
 def process_email():
@@ -78,16 +78,8 @@ def process_email():
     try:
         response = agent({"input": email_content})
         response_data = serialize(response)
-
-        # Attempt to serialize and catch any errors for each item
-        for key, value in response_data.items():
-            try:
-                json.dumps({key: value})
-            except TypeError as te:
-                app.logger.error(f'Error serializing {key}: {value}, Error: {te}')
-                raise TypeError(f'Error serializing {key}: {te}')
-
-        return jsonify({"message": "Email processed successfully", "response": response_data}), 200
+        serialized_json = json.dumps(response_data)  # Serialize to JSON string
+        return jsonify({"message": "Email processed successfully", "response": json.loads(serialized_json)}), 200
     except TypeError as te:
         app.logger.error(f'Serialization error: {str(te)}')
         return jsonify({"error": str(te)}), 500

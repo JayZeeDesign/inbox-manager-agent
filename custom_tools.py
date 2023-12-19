@@ -424,7 +424,7 @@ class ReplyEmailTool(BaseTool):
 # CREATE EMAIL DRAFT
 def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str):
     # URL to send the POST request to
-    url = 'https://hooks.zapier.com/hooks/catch/15616669/38ikw12/'
+    url = 'https://hook.us1.make.com/kj3b383jpd7z9inhm52bgfnuekjofmc2'
 
     # Data to send in the POST request
     data = {

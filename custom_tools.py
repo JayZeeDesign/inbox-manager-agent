@@ -424,7 +424,7 @@ class ReplyEmailTool(BaseTool):
 # CREATE EMAIL DRAFT
 def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str):
     # URL to send the POST request to
-    url = 'https://hook.us1.make.com/kj3b383jpd7z9inhm52bgfnuekjofmc2'
+    url = 'https://hook.us1.make.com/j588mgvm5b5fogswdiohwsouic6wtu5i'
 
     # Data to send in the POST request
     data = {

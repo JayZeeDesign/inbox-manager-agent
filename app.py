@@ -76,20 +76,16 @@ def process_email():
         return jsonify({"error": "No email content provided"}), 400
 
     try:
-        # Process the email content with your agent
         response = agent({"input": email_content})
-        # Serialize the response before returning it
         response_data = serialize(response)
 
-         # Log the serialized data for debugging
-        app.logger.info(f'Serialized Response Data: {response_data}')
-
-        # Manual serialization check
-        try:
-            json.dumps(response_data)
-        except TypeError as te:
-            app.logger.error(f'Manual serialization check failed: {str(te)}')
-            raise
+        # Attempt to serialize and catch any errors for each item
+        for key, value in response_data.items():
+            try:
+                json.dumps({key: value})
+            except TypeError as te:
+                app.logger.error(f'Error serializing {key}: {value}, Error: {te}')
+                raise TypeError(f'Error serializing {key}: {te}')
 
         return jsonify({"message": "Email processed successfully", "response": response_data}), 200
     except TypeError as te:

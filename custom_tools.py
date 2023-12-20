@@ -422,34 +422,31 @@ class ReplyEmailTool(BaseTool):
 
 
 # CREATE EMAIL DRAFT
-def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str):
-    # URL to send the POST request to
+def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str, gmailmessageID: str):
     url = 'https://hook.us1.make.com/j588mgvm5b5fogswdiohwsouic6wtu5i'
-
-    # Data to send in the POST request
     data = {
         "email": prospect_email_address,
         "subject": subject,
-        "reply": generated_reply
+        "reply": generated_reply,
+        "gmailmessageID": gmailmessageID  # Include gmailmessageID
     }
-
-    # Send the POST request
     response = requests.post(url, data=data)
-
-    # Check the response
     if response.status_code == 200:
         return ('Email draft has been created successfully')
     else:
         return ('Failed to send POST request:', response.status_code)
 
 
+
 class CreateEmailDraftInput(BaseModel):
-    """Inputs for scrape_website"""
     prospect_email_address: str = Field(
         description="The prospect's email address")
-    subject: str = Field(description="The original email subject")
+    subject: str = Field(
+        description="The original email subject")
     generated_reply: str = Field(
         description="Generated email reply to prospect")
+    gmailmessageID: str = Field(
+        description="Gmail Message ID to respond to")
 
 
 class CreateEmailDraftTool(BaseTool):
@@ -457,8 +454,8 @@ class CreateEmailDraftTool(BaseTool):
     description = "use this to create email draft for jacob to review & send"
     args_schema: Type[BaseModel] = CreateEmailDraftInput
 
-    def _run(self, prospect_email_address: str, subject: str, generated_reply: str):
-        return create_email_draft(prospect_email_address, subject, generated_reply)
+    def _run(self, prospect_email_address: str, subject: str, generated_reply: str, gmailmessageID: str):
+        return create_email_draft(prospect_email_address, subject, generated_reply, gmailmessageID)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")

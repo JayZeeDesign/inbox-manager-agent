@@ -72,14 +72,15 @@ def serialize(obj):
 def process_email():
     data = request.get_json()
     email_content = data.get('emailBody')
+    gmailmessageID = data.get('gmailmessageID')  # Extract gmailmessageID
 
     if not email_content:
         return jsonify({"error": "No email content provided"}), 400
 
     try:
-        response = agent({"input": email_content})
+        response = agent({"input": email_content, "gmailmessageID": gmailmessageID})
         response_data = serialize(response)
-        serialized_json = json.dumps(response_data)  # Serialize to JSON string
+        serialized_json = json.dumps(response_data)
         return jsonify({"message": "Email processed successfully", "response": json.loads(serialized_json)}), 200
     except TypeError as te:
         app.logger.error(f'Serialization error: {str(te)}')

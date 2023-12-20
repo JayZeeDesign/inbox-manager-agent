@@ -334,35 +334,31 @@ class ProspectResearchTool(BaseTool):
 
 # ESCALATE
 
-def escalate(original_email_address: str, message: str, additional_context: str):
-    # URL to send the POST request to
+def escalate(original_email_address: str, message: str, additional_context: str, gmailmessageID: str):
     url = 'https://hook.us1.make.com/faevm0ijp4yvdmxsnx1yod7q0zqwb8ag'
-
-    # Data to send in the POST request
     data = {
         "prospect email": original_email_address,
         "prospect message": message,
-        "additional context": additional_context
+        "additional context": additional_context,
+        "gmailmessageID": gmailmessageID  # Include gmailmessageID
     }
-
-    # Send the POST request
     response = requests.post(url, data=data)
-
-    # Check the response
     if response.status_code == 200:
         return ('This email has been escalated to Jacob, he will take care of it from here, nothing needs to be done now')
     else:
         return ('Failed to send POST request:', response.status_code)
 
 
+
 class EscalateInput(BaseModel):
-    """Inputs for scrape_website"""
     message: str = Field(
         description="The original email thread & message that was received, cc the original copy for escalation")
     original_email_address: str = Field(
         description="The email address that sent the message/email")
     additional_context: str = Field(
         description="additional context about the prospect, can be the company/prospct background research OR the consulting request details like use case, budget, etc.")
+    gmailmessageID: str = Field(
+        description="Gmail Message ID of the email being escalated")
 
 
 class EscalateTool(BaseTool):
@@ -370,29 +366,23 @@ class EscalateTool(BaseTool):
     description = "useful when you need to escalate the case to jacob or others, passing both message and original_email_address to the function"
     args_schema: Type[BaseModel] = EscalateInput
 
-    def _run(self, original_email_address: str, message: str, additional_context: str):
-        return escalate(original_email_address, message, additional_context)
+    def _run(self, original_email_address: str, message: str, additional_context: str, gmailmessageID: str):
+        return escalate(original_email_address, message, additional_context, gmailmessageID)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")
 
 
 # REPLY EMAIL
-def reply_email(message: str, email_address: str, subject: str):
-    # URL to send the POST request to
+def reply_email(message: str, email_address: str, subject: str, gmailmessageID: str):
     url = 'https://hook.us1.make.com/kj3b383jpd7z9inhm52bgfnuekjofmc2'
-
-    # Data to send in the POST request
     data = {
         "Email": email_address,
         "Subject": subject,
-        "Reply": message
+        "Reply": message,
+        "GmailMessageID": gmailmessageID  # Include gmailmessageID
     }
-
-    # Send the POST request
     response = requests.post(url, data=data)
-
-    # Check the response
     if response.status_code == 200:
         return ('Email reply has been created successfully')
     else:
@@ -401,12 +391,14 @@ def reply_email(message: str, email_address: str, subject: str):
 
 
 class ReplyEmailInput(BaseModel):
-    """Inputs for scrape_website"""
     message: str = Field(
         description="The generated response message to be sent to the email address")
     email_address: str = Field(
         description="Destination email address to send email to")
-    subject: str = Field(description="subject of the email")
+    subject: str = Field(
+        description="Subject of the email")
+    gmailmessageID: str = Field(
+        description="Gmail Message ID associated with the email thread")
 
 
 class ReplyEmailTool(BaseTool):
@@ -414,8 +406,8 @@ class ReplyEmailTool(BaseTool):
     description = "use this to send emails"
     args_schema: Type[BaseModel] = ReplyEmailInput
 
-    def _run(self, message: str, email_address: str, subject: str):
-        return reply_email(message, email_address, subject)
+    def _run(self, message: str, email_address: str, subject: str, gmailmessageID: str):
+        return reply_email(message, email_address, subject, gmailmessageID)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")

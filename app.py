@@ -72,13 +72,22 @@ def serialize(obj):
 def process_email():
     data = request.get_json()
     email_content = data.get('emailBody')
-    gmailmessageID = data.get('gmailmessageID')  # Extract gmailmessageID
+    gmailmessageID = data.get('gmailmessageID')
 
     if not email_content:
         return jsonify({"error": "No email content provided"}), 400
 
     try:
-        response = agent({"input": email_content, "gmailmessageID": gmailmessageID})
+        # Combine email content and gmailmessageID into a single dictionary
+        combined_input = {
+            "emailBody": email_content,
+            "gmailmessageID": gmailmessageID
+        }
+        # Convert the combined input to a JSON string
+        input_json = json.dumps(combined_input)
+
+        # Call the agent function with the combined JSON string as input
+        response = agent({"input": input_json})
         response_data = serialize(response)
         serialized_json = json.dumps(response_data)
         return jsonify({"message": "Email processed successfully", "response": json.loads(serialized_json)}), 200

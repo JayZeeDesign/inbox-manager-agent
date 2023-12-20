@@ -72,9 +72,16 @@ def serialize(obj):
 def process_email():
     data = request.get_json()
 
-    # Extract 'emailBody' and 'emailMessageId' directly from the JSON payload
-    email_content = data.get('emailBody')
-    email_message_id = data.get('emailMessageId')
+    # Extract the 'input' object from the JSON payload
+    email_input = data.get('input')
+    
+    # Ensure 'input' is not None
+    if not email_input:
+        return jsonify({"error": "No input provided"}), 400
+
+    # Extract 'emailBody' and 'emailMessageId' from the 'input' object
+    email_content = email_input.get('emailBody')
+    email_message_id = email_input.get('emailMessageId')
 
     # Check if either email content or message ID is missing
     if not email_content or not email_message_id:
@@ -92,7 +99,6 @@ def process_email():
     except Exception as e:
         app.logger.error(f'Error processing email: {str(e)}')
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

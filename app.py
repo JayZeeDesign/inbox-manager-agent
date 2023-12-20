@@ -71,12 +71,11 @@ def serialize(obj):
 @app.route('/process-email', methods=['POST'])
 def process_email():
     data = request.get_json()
+    email_content = data.get('emailBody')
+    email_message_id = data.get('emailMessageId')
 
-    # Expecting 'input' to contain both 'emailBody' and 'emailMessageId'
-    email_input = data.get('input')
-    
-    if not email_input:
-        return jsonify({"error": "No input provided"}), 400
+    if not email_content or not email_message_id:
+        return jsonify({"error": "Incomplete email data"}), 400
 
     email_content = email_input.get('emailBody')
     email_message_id = email_input.get('emailMessageId')

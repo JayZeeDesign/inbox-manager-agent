@@ -71,24 +71,20 @@ def serialize(obj):
 @app.route('/process-email', methods=['POST'])
 def process_email():
     data = request.get_json()
+
+    # Extract 'emailBody' and 'emailMessageId' directly from the JSON payload
     email_content = data.get('emailBody')
     email_message_id = data.get('emailMessageId')
 
-    if not email_content or not email_message_id:
-        return jsonify({"error": "Incomplete email data"}), 400
-
-    email_content = email_input.get('emailBody')
-    email_message_id = email_input.get('emailMessageId')
-
-    # If either piece is missing, you can return an error
+    # Check if either email content or message ID is missing
     if not email_content or not email_message_id:
         return jsonify({"error": "Incomplete email data"}), 400
 
     try:
-        # Now you can use both the email_content and email_message_id to process the email
+        # Process the email content and message ID
         response = agent({"input": email_content, "message_id": email_message_id})
         response_data = serialize(response)
-        serialized_json = json.dumps(response_data)  # Serialize to JSON string
+        serialized_json = json.dumps(response_data)
         return jsonify({"message": "Email processed successfully", "response": json.loads(serialized_json)}), 200
     except TypeError as te:
         app.logger.error(f'Serialization error: {str(te)}')

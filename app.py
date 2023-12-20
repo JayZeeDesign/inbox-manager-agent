@@ -71,11 +71,19 @@ def serialize(obj):
 @app.route('/process-email', methods=['POST'])
 def process_email():
     data = request.get_json()
-    email_content = data.get('emailBody')
-    email_message_id = data.get('emailMessageId')  # Extract the email message ID from the request
 
-    if not email_content:
-        return jsonify({"error": "No email content provided"}), 400
+    # Expecting 'input' to contain both 'emailBody' and 'emailMessageId'
+    email_input = data.get('input')
+    
+    if not email_input:
+        return jsonify({"error": "No input provided"}), 400
+
+    email_content = email_input.get('emailBody')
+    email_message_id = email_input.get('emailMessageId')
+
+    # If either piece is missing, you can return an error
+    if not email_content or not email_message_id:
+        return jsonify({"error": "Incomplete email data"}), 400
 
     try:
         # Now you can use both the email_content and email_message_id to process the email
@@ -89,6 +97,7 @@ def process_email():
     except Exception as e:
         app.logger.error(f'Error processing email: {str(e)}')
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

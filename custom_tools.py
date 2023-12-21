@@ -381,7 +381,7 @@ class EscalateTool(BaseTool):
 
 # REPLY EMAIL
 def reply_email(message: str, email_address: str, subject: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
-    url = 'https://hook.us1.make.com/kj3b383jpd7z9inhm52bgfnuekjofmc2'
+    url = 'https://hooks.zapier.com/hooks/catch/13252328/3awhnzr/'
     data = {
         "Email": email_address,
         "Subject": subject,

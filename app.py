@@ -73,15 +73,19 @@ def process_email():
     data = request.get_json()
     email_content = data.get('emailBody')
     gmailmessageID = data.get('gmailmessageID')
+    gmail_threadID = data.get('gmail_threadID')
+    gmail_senders_email = data.get('gmail_senders_email')
 
     if not email_content:
         return jsonify({"error": "No email content provided"}), 400
 
     try:
-        # Combine email content and gmailmessageID into a single dictionary
+        # Combine email content, gmailmessageID, thread ID, and senders email into a single dictionary
         combined_input = {
             "emailBody": email_content,
-            "gmailmessageID": gmailmessageID
+            "gmailmessageID": gmailmessageID,
+            "gmail_threadID": gmail_threadID,
+            "gmail_senders_email": gmail_senders_email
         }
         # Convert the combined input to a JSON string
         input_json = json.dumps(combined_input)

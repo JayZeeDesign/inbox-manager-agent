@@ -334,13 +334,15 @@ class ProspectResearchTool(BaseTool):
 
 # ESCALATE
 
-def escalate(original_email_address: str, message: str, additional_context: str, gmailmessageID: str):
+def escalate(original_email_address: str, message: str, additional_context: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
     url = 'https://hooks.zapier.com/hooks/catch/13252328/3aaamiy/'
     data = {
         "prospect email": original_email_address,
         "prospect message": message,
         "additional context": additional_context,
-        "gmailmessageID": gmailmessageID  # Include gmailmessageID
+        "gmailmessageID": gmailmessageID,
+        "gmail_threadID": gmail_threadID,
+        "gmail_senders_email": gmail_senders_email
     }
     response = requests.post(url, data=data)
     if response.status_code == 200:
@@ -359,6 +361,10 @@ class EscalateInput(BaseModel):
         description="additional context about the prospect, can be the company/prospct background research OR the consulting request details like use case, budget, etc.")
     gmailmessageID: str = Field(
         description="Gmail Message ID of the email being escalated")
+    gmail_threadID: str = Field(
+        description="Gmail Thread ID of the email thread being escalated")
+    gmail_senders_email: str = Field(
+        description="The email that sent the message/email")
 
 
 class EscalateTool(BaseTool):
@@ -366,21 +372,24 @@ class EscalateTool(BaseTool):
     description = "useful when you need to escalate the case to jacob or others, passing both message and original_email_address to the function"
     args_schema: Type[BaseModel] = EscalateInput
 
-    def _run(self, original_email_address: str, message: str, additional_context: str, gmailmessageID: str):
-        return escalate(original_email_address, message, additional_context, gmailmessageID)
+    def _run(self, original_email_address: str, message: str, additional_context: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
+        return escalate(original_email_address, message, additional_context, gmailmessageID, gmail_threadID, gmail_senders_email)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")
 
 
 # REPLY EMAIL
-def reply_email(message: str, email_address: str, subject: str, gmailmessageID: str):
+def reply_email(message: str, email_address: str, subject: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
     url = 'https://hook.us1.make.com/kj3b383jpd7z9inhm52bgfnuekjofmc2'
     data = {
         "Email": email_address,
         "Subject": subject,
         "Reply": message,
-        "GmailMessageID": gmailmessageID  # Include gmailmessageID
+        "GmailMessageID": gmailmessageID,  # Include gmailmessageID
+        "Gmail_threadID": gmail_threadID,
+        "Gmail_senders_email": gmail_senders_email
+         
     }
     response = requests.post(url, data=data)
     if response.status_code == 200:
@@ -399,6 +408,10 @@ class ReplyEmailInput(BaseModel):
         description="Subject of the email")
     gmailmessageID: str = Field(
         description="Gmail Message ID associated with the email thread")
+    gmail_threadID: str = Field(
+        description="Gmail Thread ID of the email thread being escalated")
+    gmail_senders_email: str = Field(
+        description="The email that sent the message/email")
 
 
 class ReplyEmailTool(BaseTool):
@@ -406,21 +419,23 @@ class ReplyEmailTool(BaseTool):
     description = "use this to send emails"
     args_schema: Type[BaseModel] = ReplyEmailInput
 
-    def _run(self, message: str, email_address: str, subject: str, gmailmessageID: str):
-        return reply_email(message, email_address, subject, gmailmessageID)
+    def _run(self, message: str, email_address: str, subject: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
+        return reply_email(message, email_address, subject, gmailmessageID, gmail_threadID, gmail_senders_email)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")
 
 
 # CREATE EMAIL DRAFT
-def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str, gmailmessageID: str):
+def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
     url = 'https://hooks.zapier.com/hooks/catch/13252328/3ay2nwo/'
     data = {
         "email": prospect_email_address,
         "subject": subject,
         "reply": generated_reply,
-        "gmailmessageID": gmailmessageID  # Include gmailmessageID
+        "gmailmessageID": gmailmessageID,  # Include gmailmessageID
+        "Gmail_threadID": gmail_threadID,
+        "Gmail_senders_email": gmail_senders_email
     }
     response = requests.post(url, data=data)
     if response.status_code == 200:
@@ -439,6 +454,11 @@ class CreateEmailDraftInput(BaseModel):
         description="Generated email reply to prospect")
     gmailmessageID: str = Field(
         description="Gmail Message ID to respond to")
+    gmail_threadID: str = Field(
+        description="Gmail Thread ID to respond to")
+    gmail_senders_email: str = Field(
+        description="The prospect's real email address"
+    )
 
 
 class CreateEmailDraftTool(BaseTool):
@@ -446,8 +466,8 @@ class CreateEmailDraftTool(BaseTool):
     description = "use this to create email draft for jacob to review & send"
     args_schema: Type[BaseModel] = CreateEmailDraftInput
 
-    def _run(self, prospect_email_address: str, subject: str, generated_reply: str, gmailmessageID: str):
-        return create_email_draft(prospect_email_address, subject, generated_reply, gmailmessageID)
+    def _run(self, prospect_email_address: str, subject: str, generated_reply: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
+        return create_email_draft(prospect_email_address, subject, generated_reply, gmailmessageID, gmail_threadID, gmail_senders_email)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")

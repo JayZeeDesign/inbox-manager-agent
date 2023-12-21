@@ -215,7 +215,7 @@ def scrape_website(objective: str, url: str):
 
     # Send the POST request
     response = requests.post(
-        "https://chrome.browserless.io/content?token=xxxxxxxxxxxxxxxxxxxxxxxxxxx", headers=headers, data=data_json)
+        "https://chrome.browserless.io/content?token=74f64eda-c4bf-4768-bb1d-81eefe5a5780", headers=headers, data=data_json)
 
     # Check the response status code
     if response.status_code == 200:
@@ -258,7 +258,7 @@ def search(query):
     })
 
     headers = {
-        'X-API-KEY': 'xxxxxxxxxxxxxxxxxxxxx',
+        'X-API-KEY': '1e22188541228915855bcae4f59fdd52eca8c864',
         'Content-Type': 'application/json'
     }
 

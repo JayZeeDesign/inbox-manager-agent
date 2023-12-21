@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv, find_dotenv
-import openai
+from openai import OpenAI
 
-from langchain import PromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 from langchain.chat_models import ChatOpenAI
@@ -19,33 +19,36 @@ import json
 from langchain.schema import SystemMessage
 
 load_dotenv(find_dotenv())
-openai.api_key = os.environ.get("OPENAI_API_KEY")
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
+
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+llm = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
 
 
 # CATEGORISE EMAIL
-def check_consulting_email(lates_reply: str):
+def check_consult_inquiry(lates_reply: str):
     prompt = f"""
     EMAIL: {lates_reply}
     ---
 
-    Above is an email about Job offer / consulting; Your goal is identify if all information above is mentioned:
-    1. What's the problem the prospect is trying to solve? 
-    2. Their budget
+    Above is an email about a property inquiry; Your goal is to identify if all necessary information is provided by the client for a consultation on buying, selling, or renting properties:
+    1. The type of property the client is interested in.
+    2. The location of interest.
+    3. The client's budget.
+    4. The client's timeline or urgency.
+    5. Any specific requirements or preferences for the property.
 
-    If all info above is collected, return YES, otherwise, return NO; (Return ONLY YES or NO)
+    If all the information above is collected, return YES, otherwise, return NO; (Return ONLY YES or NO)
 
     ANSWER: 
     """
 
-    all_needs_collected_result = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
+    all_needs_collected_result = client.chat.completions.create(model="gpt-4-1106-preview",
+    messages=[
+        {"role": "user", "content": prompt}
+    ])
 
-    all_needs_collected = all_needs_collected_result["choices"][0]["message"]["content"]
+    all_needs_collected = all_needs_collected_result.choices[0].message.content
 
     return all_needs_collected
 
@@ -57,33 +60,31 @@ def categorise_email(lates_reply: str):
 
     Your goal is to categorise the email based on categories below:
 
-    1. COLLABORATION/SPONSORSHIP: These are emails where companies or individuals are reaching out to propose a collaboration or sponsorship opportunity with AI Jason. They often include details about their product or service and how they envision the partnership.
+    1. COLLABORATION: These are emails where companies or individuals are reaching out to propose a collaboration with Jacob Ferrari. They often include details about their product or service and how they envision the partnership.
 
-    2. JOB_OFFER/CONSULTING: These emails involve individuals or companies reaching out to AI Jason with a specific job or project they want him to work on. This could range from developing an AI application to leading a specific activity.
+    2. CONSULTING: These emails involve individuals reaching out to the real estate agent with specific requests regarding property transactions. This could range from seeking advice on purchasing a new home or selling a home.
 
-    3. QUESTIONS: These emails involve individuals reaching out to AI Jason with specific questions or inquiries. This could be about his videos, his knowledge on a specific topic, or his thoughts on a specific AI tool or technology.
+    3. QUESTIONS: These emails involve individuals reaching out to Jacob Ferrari with specific questions or inquiries. This could be about real estate, his knowledge on a specific topic, or his thoughts on the market.
 
-    4. NON_REPLY: These are auto emails that don't need any response or involve companies or individuals reaching out to AI Jason to offer their services. This could be a marketing agency offering to help him find sponsorship opportunities or a company offering a specific tool or service they think he might find useful.
+    4. NON_REPLY: These are auto emails that don't need any response or involve companies or individuals reaching out to Jacob Ferrari to offer their services. This could be a marketing agency offering to help him find sponsorship opportunities or a company offering a specific tool or service they think he might find useful.
 
     5. OTHER: These are emails that don't fit into any of the above categories.
 
     CATEGORY (Return ONLY the category name in capital):
     """
 
-    category_result = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "user", "content": categorise_prompt}
-        ]
-    )
+    category_result = client.chat.completions.create(model="gpt-4-1106-preview",
+    messages=[
+        {"role": "user", "content": categorise_prompt}
+    ])
 
-    category = category_result["choices"][0]["message"]["content"]
+    category = category_result.choices[0].message.content
 
-    if category == "JOB_OFFER/CONSULTING":
-        all_needs_collected = check_consulting_email(lates_reply)
+    if category == "CONSULTING":
+        all_needs_collected = check_consult_inquiry(lates_reply)
         if all_needs_collected == "YES":
             return {
-                "Step 1": """Forward the email to jason.zhou.design@gmail.com, with summary of 1.What's the problem the prospect is trying to solve?  2.Their budget"""
+                "Step 1": """Forward the email to jferrarishaikh@gmail.com, with summary of 1. The type of property the client is interested in. 2. The location of interest. 3. The client's budget. 4. The client's timeline or urgency. 5. Any specific requirements or preferences for the property."""
             }
         else:
             return {
@@ -91,10 +92,10 @@ def categorise_email(lates_reply: str):
                 "Step 2": "Send generated email response to prospect",
             }
     else:
-        if category == "COLLABORATION/SPONSORSHIP":
+        if category == "COLLABORATION":
             return {
                 "Step 1": "Research about the prospect & company",
-                "Step 2": "Forward the email to jason.zhou.design@gmail.com, with the research results included"
+                "Step 2": "Forward the email to jferrarishaikh@gmail.com, with the research results included"
             }
         else:
             if category == "NON_REPLY":
@@ -126,7 +127,7 @@ class CategoriseEmailTool(BaseTool):
 # WRITE EMAIL
 def generate_email_response(email_thread: str, category: str):
     # URL endpoint
-    url = "https://api-f1db6c.stack.tryrelevance.com/latest/studios/6af484b0-a8bf-4545-91b8-75d46ac8f354/trigger_limited"
+    url = "https://api-bcbe5a.stack.tryrelevance.com/latest/studios/e97a281a-eea9-4846-bdb8-00b817b51a1c/trigger_limited"
 
     # Headers
     headers = {
@@ -137,9 +138,9 @@ def generate_email_response(email_thread: str, category: str):
     data = {
         "params": {
             "client_email": email_thread,
-            "goal": "write email response" if category != "CONSULTING FOLLOW UP" else "for each consulting email, we need to collect 1. Their use case & problem they are trying to solve 2. Their budget; Try to collect those info from them",
+            "goal": "write email response" if category != "CONSULTING FOLLOW UP" else "for each consulting email, we need to collect 1. The type of property the client is interested in. 2. The location of interest. 3. The client's budget. 4. The client's timeline or urgency. 5. Any specific requirements or preferences for the property; Try to collect those info from them",
         },
-        "project": "f86edbc1-fcb6-41f9-b9b6-be14a6f06412"
+        "project": "1ff4f8cf216a-4967-adef-1bfe8d8fb84e"
     }
 
     # Send POST request
@@ -157,7 +158,7 @@ class GenerateEmailResponseInput(BaseModel):
 
 class GenerateEmailResponseTool(BaseTool):
     name = "generate_email_response"
-    description = "use this to generate the email response based on specific guidelines, voice & tone & knowledge for AI Jason"
+    description = "use this to generate the email response based on specific guidelines, voice & tone & knowledge for Jacob Ferrari"
     args_schema: Type[BaseModel] = GenerateEmailResponseInput
 
     def _run(self, email_thread: str, category: str):
@@ -214,7 +215,7 @@ def scrape_website(objective: str, url: str):
 
     # Send the POST request
     response = requests.post(
-        "https://chrome.browserless.io/content?token=xxxxxxxxxxxxxxxxxxxxxxxxxxx", headers=headers, data=data_json)
+        "https://chrome.browserless.io/content?token=74f64eda-c4bf-4768-bb1d-81eefe5a5780", headers=headers, data=data_json)
 
     # Check the response status code
     if response.status_code == 200:
@@ -257,7 +258,7 @@ def search(query):
     })
 
     headers = {
-        'X-API-KEY': 'xxxxxxxxxxxxxxxxxxxxx',
+        'X-API-KEY': '1e22188541228915855bcae4f59fdd52eca8c864',
         'Content-Type': 'application/json'
     }
 
@@ -333,80 +334,84 @@ class ProspectResearchTool(BaseTool):
 
 # ESCALATE
 
-def escalate(original_email_address: str, message: str, additional_context: str):
-    # URL to send the POST request to
-    url = 'https://hooks.zapier.com/hooks/catch/15616669/38qwq19/'
-
-    # Data to send in the POST request
+def escalate(original_email_address: str, message: str, additional_context: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
+    url = 'https://hooks.zapier.com/hooks/catch/13252328/3aaamiy/'
     data = {
         "prospect email": original_email_address,
         "prospect message": message,
-        "additional context": additional_context
+        "additional context": additional_context,
+        "gmailmessageID": gmailmessageID,
+        "gmail_threadID": gmail_threadID,
+        "gmail_senders_email": gmail_senders_email
     }
-
-    # Send the POST request
     response = requests.post(url, data=data)
-
-    # Check the response
     if response.status_code == 200:
-        return ('This email has been escalated to Jason, he will take care of it from here, nothing needs to be done now')
+        return ('This email has been escalated to Jacob, he will take care of it from here, nothing needs to be done now')
     else:
         return ('Failed to send POST request:', response.status_code)
 
 
+
 class EscalateInput(BaseModel):
-    """Inputs for scrape_website"""
     message: str = Field(
         description="The original email thread & message that was received, cc the original copy for escalation")
     original_email_address: str = Field(
         description="The email address that sent the message/email")
     additional_context: str = Field(
         description="additional context about the prospect, can be the company/prospct background research OR the consulting request details like use case, budget, etc.")
+    gmailmessageID: str = Field(
+        description="Gmail Message ID of the email being escalated")
+    gmail_threadID: str = Field(
+        description="Gmail Thread ID of the email thread being escalated")
+    gmail_senders_email: str = Field(
+        description="The email that sent the message/email")
 
 
 class EscalateTool(BaseTool):
-    name = "escalate_to_jason"
-    description = "useful when you need to escalate the case to jason or others, passing both message and original_email_address to the function"
+    name = "escalate_to_jacob"
+    description = "useful when you need to escalate the case to jacob or others, passing both message and original_email_address to the function"
     args_schema: Type[BaseModel] = EscalateInput
 
-    def _run(self, original_email_address: str, message: str, additional_context: str):
-        return escalate(original_email_address, message, additional_context)
+    def _run(self, original_email_address: str, message: str, additional_context: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
+        return escalate(original_email_address, message, additional_context, gmailmessageID, gmail_threadID, gmail_senders_email)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")
 
 
 # REPLY EMAIL
-def reply_email(message: str, email_address: str, subject: str):
-    return f"An email has been sent to {email_address}"
-
-    # URL to send the POST request to
-    url = 'https://hooks.zapier.com/hooks/catch/15616669/38qaaau/'
-
-    # Data to send in the POST request
+def reply_email(message: str, email_address: str, subject: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
+    url = 'https://hooks.zapier.com/hooks/catch/13252328/3awhnzr/'
     data = {
         "Email": email_address,
         "Subject": subject,
-        "Reply": message
+        "Reply": message,
+        "GmailMessageID": gmailmessageID,  # Include gmailmessageID
+        "Gmail_threadID": gmail_threadID,
+        "Gmail_senders_email": gmail_senders_email
+         
     }
-
-    # Send the POST request
     response = requests.post(url, data=data)
-
-    # Check the response
     if response.status_code == 200:
         return ('Email reply has been created successfully')
     else:
         return ('Failed to send POST request:', response.status_code)
 
 
+
 class ReplyEmailInput(BaseModel):
-    """Inputs for scrape_website"""
     message: str = Field(
         description="The generated response message to be sent to the email address")
     email_address: str = Field(
         description="Destination email address to send email to")
-    subject: str = Field(description="subject of the email")
+    subject: str = Field(
+        description="Subject of the email")
+    gmailmessageID: str = Field(
+        description="Gmail Message ID associated with the email thread")
+    gmail_threadID: str = Field(
+        description="Gmail Thread ID of the email thread being escalated")
+    gmail_senders_email: str = Field(
+        description="The email that sent the message/email")
 
 
 class ReplyEmailTool(BaseTool):
@@ -414,51 +419,55 @@ class ReplyEmailTool(BaseTool):
     description = "use this to send emails"
     args_schema: Type[BaseModel] = ReplyEmailInput
 
-    def _run(self, message: str, email_address: str, subject: str):
-        return reply_email(message, email_address, subject)
+    def _run(self, message: str, email_address: str, subject: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
+        return reply_email(message, email_address, subject, gmailmessageID, gmail_threadID, gmail_senders_email)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")
 
 
 # CREATE EMAIL DRAFT
-def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str):
-    # URL to send the POST request to
-    url = 'https://hooks.zapier.com/hooks/catch/15616669/38ikw12/'
-
-    # Data to send in the POST request
+def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
+    url = 'https://hooks.zapier.com/hooks/catch/13252328/3ay2nwo/'
     data = {
         "email": prospect_email_address,
         "subject": subject,
-        "reply": generated_reply
+        "reply": generated_reply,
+        "gmailmessageID": gmailmessageID,  # Include gmailmessageID
+        "Gmail_threadID": gmail_threadID,
+        "Gmail_senders_email": gmail_senders_email
     }
-
-    # Send the POST request
     response = requests.post(url, data=data)
-
-    # Check the response
     if response.status_code == 200:
         return ('Email draft has been created successfully')
     else:
         return ('Failed to send POST request:', response.status_code)
 
 
+
 class CreateEmailDraftInput(BaseModel):
-    """Inputs for scrape_website"""
     prospect_email_address: str = Field(
         description="The prospect's email address")
-    subject: str = Field(description="The original email subject")
+    subject: str = Field(
+        description="The original email subject")
     generated_reply: str = Field(
         description="Generated email reply to prospect")
+    gmailmessageID: str = Field(
+        description="Gmail Message ID to respond to")
+    gmail_threadID: str = Field(
+        description="Gmail Thread ID to respond to")
+    gmail_senders_email: str = Field(
+        description="The prospect's real email address"
+    )
 
 
 class CreateEmailDraftTool(BaseTool):
     name = "create_email_draft"
-    description = "use this to create email draft for jason to review & send"
+    description = "use this to create email draft for jacob to review & send"
     args_schema: Type[BaseModel] = CreateEmailDraftInput
 
-    def _run(self, prospect_email_address: str, subject: str, generated_reply: str):
-        return create_email_draft(prospect_email_address, subject, generated_reply)
+    def _run(self, prospect_email_address: str, subject: str, generated_reply: str, gmailmessageID: str, gmail_threadID: str, gmail_senders_email: str):
+        return create_email_draft(prospect_email_address, subject, generated_reply, gmailmessageID, gmail_threadID, gmail_senders_email)
 
     def _arun(self, url: str):
         raise NotImplementedError("failed to escalate")

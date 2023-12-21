@@ -335,7 +335,7 @@ class ProspectResearchTool(BaseTool):
 # ESCALATE
 
 def escalate(original_email_address: str, message: str, additional_context: str, gmailmessageID: str):
-    url = 'https://hook.us1.make.com/faevm0ijp4yvdmxsnx1yod7q0zqwb8ag'
+    url = 'https://hooks.zapier.com/hooks/catch/13252328/3aaamiy/'
     data = {
         "prospect email": original_email_address,
         "prospect message": message,
@@ -415,7 +415,7 @@ class ReplyEmailTool(BaseTool):
 
 # CREATE EMAIL DRAFT
 def create_email_draft(prospect_email_address: str, subject: str, generated_reply: str, gmailmessageID: str):
-    url = 'https://hook.us1.make.com/j588mgvm5b5fogswdiohwsouic6wtu5i'
+    url = 'https://hooks.zapier.com/hooks/catch/13252328/3ay2nwo/'
     data = {
         "email": prospect_email_address,
         "subject": subject,
